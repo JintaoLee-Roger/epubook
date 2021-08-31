@@ -135,7 +135,7 @@ class EpubBase():
             f'            <li>{self.intro}</li>\n' + \
             '            <li><br/></li>\n' + \
             '            <li class=\"copyright\">Epub is created by <b>epubook</b></li>\n' + \
-            '            <li class=\"copyright\">github: [<b><a href=\"https://github.com/JintaoLee-Roger/crawler\" target=\"_blank\">JintaoLee-Roger/crawler</a></b>]</li>\n' + \
+            '            <li class=\"copyright\">github: [<b><a href=\"https://github.com/JintaoLee-Roger/epubook\" target=\"_blank\">JintaoLee-Roger/crawler</a></b>]</li>\n' + \
             '        </ul>\n' + \
             '        </div>\n' + \
             '    </body>\n' + \
