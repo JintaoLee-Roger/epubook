@@ -1,0 +1,12 @@
+.vscode/*
+
+__pycache__
+
+*.json
+*.jpg
+*.jpeg
+*.png
+*.svg
+*.epub
+*.html
+*.xhtml
