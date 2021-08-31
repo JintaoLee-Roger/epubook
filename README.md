@@ -7,7 +7,7 @@
   </tr>
 </table>
 
-A tool with python to create ebook in **EPUB** format.
+A tool with python to create ebooks in **EPUB** format.
 
 `test.py` is an example to obtain the first ten chapters by web crawler, then 
 create an ebook in EPUB format.
