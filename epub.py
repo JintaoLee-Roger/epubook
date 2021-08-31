@@ -12,12 +12,12 @@ class Epub(EpubBase):
                 html: bool=True, full: bool=False) -> None:
         ''' create a chapter from text.
         
-        The text can be 
-        (1) normal content text, i.e. a full chapter in string, set html=False,; 
-        (2) a string list, each element is a paragraph of a chapter, set html=False;
+        The text can be \n
+        (1) normal content text, i.e. a full chapter in string, set html=False;\n 
+        (2) a string list, each element is a paragraph of a chapter, set html=False;\n
         (3) xhtml text, it can be text from a completed XHTML file (set html=True, full=True),
-            or text without XHTML head, meta, just keep body, such as 
-            "<p>para1</p>\n<p>para2<\p>"
+        or text without XHTML head, meta, just keep body, such as 
+        "<p>para1</p><p>para2<\p>"
 
         Args:
             id: chapter id in opf file, ncx file
