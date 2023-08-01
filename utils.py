@@ -1,9 +1,8 @@
-from enum import auto
-from ntpath import join
 import os, shutil
-# from typing import List
+
 
 class EpubBase():
+
     def __init__(self, path: str) -> None:
         self.title = os.path.split(path)[1].split('.')[0]
         self.author = []
@@ -23,13 +22,13 @@ class EpubBase():
 
     def set_title(self, title: str) -> None:
         self.title = title
-    
+
     def add_author(self, author: str) -> None:
         self.author.append(author)
 
     def set_language(self, lang: str) -> None:
         self.lang = lang
-    
+
     def add_intro(self, intro: str) -> None:
         ''' add introduction in page.xhtml file'''
         self.intro = intro
@@ -56,12 +55,15 @@ class EpubBase():
             '   </rootfiles>\n' + \
             '</container>'
 
-        with open(os.path.join(self.meta_path, 'container.xml'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(self.meta_path, 'container.xml'),
+                  'w',
+                  encoding='utf-8') as f:
             f.write(content)
 
     def write_mimetype(self) -> None:
         content = 'application/epub+zip'
-        with open(os.path.join(self.path, 'mimetype'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(self.path, 'mimetype'), 'w',
+                  encoding='utf-8') as f:
             f.write(content)
 
     def write_stylesheet(self) -> None:
@@ -107,7 +109,9 @@ class EpubBase():
             '.italic {\n' + \
             '    font-style: italic\n' + \
             '    }'
-        with open(os.path.join(self.path, 'stylesheet.css'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(self.path, 'stylesheet.css'),
+                  'w',
+                  encoding='utf-8') as f:
             f.write(content)
 
     def write_page(self) -> None:
@@ -140,7 +144,8 @@ class EpubBase():
             '        </div>\n' + \
             '    </body>\n' + \
             '</html>'
-        with open(os.path.join(self.path, 'page.xhtml'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(self.path, 'page.xhtml'), 'w',
+                  encoding='utf-8') as f:
             f.write(content)
 
     def write_toc_head(self) -> None:
@@ -161,7 +166,8 @@ class EpubBase():
             f'    <text>{authors}</text>\n' + \
             '</docAuthor>\n' + \
             '<navMap>\n'
-        with open(os.path.join(self.path, 'toc.ncx'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(self.path, 'toc.ncx'), 'w',
+                  encoding='utf-8') as f:
             f.write(content)
 
     def write_catalog_head(self) -> None:
@@ -178,7 +184,9 @@ class EpubBase():
             '<body>\n' + \
             '    <h1>目录<br/>Content</h1>\n' + \
             '    <ul>\n'
-        with open(os.path.join(self.path, 'catalog.xhtml'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(self.path, 'catalog.xhtml'),
+                  'w',
+                  encoding='utf-8') as f:
             f.write(content)
 
     def write_opf_head(self) -> None:
@@ -201,8 +209,11 @@ class EpubBase():
             '\n' + \
             '<manifest>\n'
 
-        with open(os.path.join(self.path, 'content.opf'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(self.path, 'content.opf'),
+                  'w',
+                  encoding='utf-8') as f:
             f.write(content)
+
 
 if __name__ == "__main__":
     EpubBase('.').write_page('Test', ['svlier'], 'testetstetse hdhsd 但是')

@@ -1,55 +1,80 @@
-import os
+import os, glob, re
 import shutil, zipfile
 from typing import List
 from utils import EpubBase
 
-class Epub(EpubBase):
-    def __init__(self, path: str):
-        super(Epub, self).__init__(path)
-        self.catalog = {} # {id:title}
 
-    def create_chapter(self, id: str, title: str, text, 
-                html: bool=True, full: bool=False) -> None:
+class Epub(EpubBase):
+
+    def __init__(self, path: str, resume=False):
+        super(Epub, self).__init__(path)
+        self.catalog = {}  # {id:title}
+        if resume:
+            self.resume()
+
+    def resume(self) -> None:
+        """ 
+        resume from an existed dir, obtain chapters' id and title,
+        fill self.catalog
+        """
+        l = glob.glob(os.path.join(self.path, 'chapter_*.xhtml'))
+        l = sorted(l, key=lambda x: int(x.split('_')[-1].split('.')[0]))
+        for f in l:
+            cid = int(f.split('_')[-1].split('.')[0])
+            with open(f, 'r') as _f:
+                title = re.findall('<title>(.*?)</title>', _f.read())[0]
+            self.catalog[cid] = title
+
+    def create_chapter(self,
+                       cid: int,
+                       title: str,
+                       text: str or List[str],
+                       html: bool = True,
+                       full: bool = False) -> None:
         ''' create a chapter from text.
         
         The text can be \n
         (1) normal content text, i.e. a full chapter in string, set html=False;\n 
-        (2) a string list, each element is a paragraph of a chapter, set html=False;\n
+        (2) a string list, each element is a paragraph of a chapter;\n
         (3) xhtml text, it can be text from a completed XHTML file (set html=True, full=True),
         or text without XHTML head, meta, just keep body, such as 
-        "<p>para1</p><p>para2<\p>"
+        "<p>para1</p><p>para2<\p>" (html=True, full=False, default settings)
 
         Args:
-            id: chapter id in opf file, ncx file
+            cid: chapter id in opf file, ncx file
             title: chapter name
             text: content
             html: if True, text in html format, default is True
             full: if True, text can be created a full XHTML file
         '''
-        self.catalog[id] = title
+        self.catalog[cid] = title
         chapter = EpubChapter(title)
-        if html:
-            content = chapter.from_html_text(text, full)
-        else:
+
+        if isinstance(text, list) or not html:
             content = chapter.from_text(text)
-        with open(os.path.join(self.path, f'chapter_{id}.xhtml'), 'w', encoding='utf-8') as f:
+        else:
+            content = chapter.from_html_text(text, full)
+
+        with open(os.path.join(self.path, f'chapter_{cid}.xhtml'),
+                  'w',
+                  encoding='utf-8') as f:
             f.write(content)
 
-    def chapter_from_file(self, id: str, title: str, filename: str) -> None:
+    def chapter_from_file(self, cid: str, title: str, filename: str) -> None:
         ''' create a chapter from a XHTML file
 
         Args:
-            id: chapter id in opf file, ncx file
+            cid: chapter id in opf file, ncx file
             title: chapter name
             filename: XHTML file path
         '''
         if not os.path.exists(filename):
             print(f'File: {filename} not exists!')
             exit(1)
-        self.catalog[id] = title
-        shutil.copy(filename, os.path.join(self.path, f'{id}.xhtml'))
+        self.catalog[cid] = title
+        shutil.copy(filename, os.path.join(self.path, f'chapter_{cid}.xhtml'))
 
-    def create(self, clean: bool=True) -> None:
+    def create(self, clean: bool = True) -> None:
         ''' create a epub file
 
         Args:
@@ -64,17 +89,20 @@ class Epub(EpubBase):
         self.write_toc()
         self.compression(clean)
 
-    def compression(self, clean: bool=True) -> None:
+    def compression(self, clean: bool = True) -> None:
         file_list = os.listdir(self.path)
-        z = zipfile.ZipFile(self.path+'.epub', 'w', zipfile.ZIP_DEFLATED)
-        z.write(os.path.join(self.path, 'mimetype'), 'mimetype', compress_type=zipfile.ZIP_STORED)
+        z = zipfile.ZipFile(self.path + '.epub', 'w', zipfile.ZIP_DEFLATED)
+        z.write(os.path.join(self.path, 'mimetype'),
+                'mimetype',
+                compress_type=zipfile.ZIP_STORED)
         file_list.remove('mimetype')
         for f in file_list:
             if not os.path.isdir(os.path.join(self.path, f)):
                 z.write(os.path.join(self.path, f), f)
             else:
                 fs = os.listdir(os.path.join(self.path, f))
-                z.write(os.path.join(self.path, f, fs[0]), os.path.join(f, fs[0]))
+                z.write(os.path.join(self.path, f, fs[0]),
+                        os.path.join(f, fs[0]))
         if clean:
             shutil.rmtree(self.path)
 
@@ -90,40 +118,59 @@ class Epub(EpubBase):
             '<spine toc=\"ncx\">\n' + \
             '    <itemref idref=\"page\"/>\n' + \
             '    <itemref idref=\"catalog\"/>\n'
-        with open(os.path.join(self.path, 'content.opf'), 'a', encoding='utf-8') as f:
-            for id in self.catalog.keys():
-                f.write(f'    <item href=\"chapter_{id}.xhtml\" id=\"{id}\" media-type=\"application/xhtml+xml\"/>\n')
+        with open(os.path.join(self.path, 'content.opf'),
+                  'a',
+                  encoding='utf-8') as f:
+            for cid in self.catalog.keys():
+                f.write(
+                    f'    <item href=\"chapter_{cid}.xhtml\" id=\"{cid}\" media-type=\"application/xhtml+xml\"/>\n'
+                )
             if self.cover_img_path is not None:
-                f.write(f'    <item id="cover-image" href="cover.{self.suffix}" media-type="image/{self.media_type}"/>\n')
+                f.write(
+                    f'    <item id="cover-image" href="cover.{self.suffix}" media-type="image/{self.media_type}"/>\n'
+                )
             f.write(cont1)
-            for id in self.catalog.keys():
-                f.write(f'    <itemref idref=\"{id}\"/>\n')
+            for cid in self.catalog.keys():
+                f.write(f'    <itemref idref=\"{cid}\"/>\n')
             f.write('</spine>\n')
             f.write('<guide>\n')
-            f.write('    <reference href=\"catalog.xhtml\" type=\"toc\" title=\"目录\"/>\n')
+            f.write(
+                '    <reference href=\"catalog.xhtml\" type=\"toc\" title=\"目录\"/>\n'
+            )
             f.write('</guide>\n')
             f.write('</package>\n')
 
     def write_catalog(self) -> None:
         '''write catalog.xhtml file'''
         self.write_catalog_head()
-        with open(os.path.join(self.path, 'catalog.xhtml'), 'a', encoding='utf-8') as f:
-            for id, title in self.catalog.items():
-                f.write(f'        <li class=\"catalog\"><a href=\"chapter_{id}.xhtml\">{title}</a></li>\n')
-            f.write('    </ul>\n    <div class=\"mbppagebreak\"></div>\n</body>\n</html>')
+        with open(os.path.join(self.path, 'catalog.xhtml'),
+                  'a',
+                  encoding='utf-8') as f:
+            for cid, title in self.catalog.items():
+                f.write(
+                    f'        <li class=\"catalog\"><a href=\"chapter_{cid}.xhtml\">{title}</a></li>\n'
+                )
+            f.write(
+                '    </ul>\n    <div class=\"mbppagebreak\"></div>\n</body>\n</html>'
+            )
 
     def write_toc(self) -> None:
         '''write toc.ncx file'''
         self.write_toc_head()
-        with open(os.path.join(self.path, 'toc.ncx'), 'a', encoding='utf-8') as f:
+        with open(os.path.join(self.path, 'toc.ncx'), 'a',
+                  encoding='utf-8') as f:
             idx = 1
-            for id, title in self.catalog.items():
-                f.write(f'<navPoint id=\"{id}\" playOrder=\"{idx}\"><navLabel><text>{title}</text></navLabel><content src=\"chapter_{id}.xhtml\"/></navPoint>\n')
+            for cid, title in self.catalog.items():
+                f.write(
+                    f'<navPoint id=\"{cid}\" playOrder=\"{idx}\"><navLabel><text>{title}</text></navLabel><content src=\"chapter_{cid}.xhtml\"/></navPoint>\n'
+                )
                 idx += 1
             f.write('</navMap>\n')
             f.write('</ncx>')
 
+
 class EpubChapter():
+
     def __init__(self, title=''):
         self.chapter_title = title
         self.chapter = ''
@@ -149,7 +196,7 @@ class EpubChapter():
 
         return self.chapter
 
-    def from_text(self, text) -> str:
+    def from_text(self, text: str or List[str]) -> str:
         if not isinstance(text, List):
             text = text.split('\n')
         html_text = '    <p>' + '</p>\n    <p>'.join(text) + '</p>\n'
